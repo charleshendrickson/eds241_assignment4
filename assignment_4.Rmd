@@ -40,7 +40,7 @@ options(scipen=10) # not scientific notation
 ```
 
 
-Data
+# Data
 ```{r}
 # Load the data
 EU_sardines_data <- data.frame(read.csv("EU_sardines.csv"))
@@ -48,7 +48,7 @@ EU_sardines_data <- data.frame(read.csv("EU_sardines.csv"))
 
 
 ```{r}
-# Take the log of volume_sold and price_euro_kg 
+# Take the log of volume_sold and price_euro_kg and create new columns for them
 EU_sardines_data <- EU_sardines_data %>% 
   mutate(log_volume_sold_kg = log(volume_sold_kg)) %>% 
   mutate(log_price_euro_kg = log(price_euro_kg))
@@ -56,13 +56,14 @@ EU_sardines_data <- EU_sardines_data %>%
 ```
 
 
+# Question (a)
 
 (a) Estimate a bivariate regression of log(volume_sold_kg) on log(price euro_kg). What is the
 price elasticity of demand for sardines? Test the null hypothesis that the price elasticity is equal to -1.
 
-\noindent**The price elasticity of demand for sardines is -1.545**
+**The price elasticity of demand for sardines is -1.545**
 
-\noindent**We reject the Null hypothesis that the price elasticity is equal to -1 due getting a very low and statistically significant p-value (0.000000000002946) by the linear hypothesis testing.**
+**We reject the null hypothesis that the price elasticity is equal to -1 because our linear hypothesis test tells us that the p-value is less than 0.001 and is statistically significant.**
 
 ```{r}
 # Bivariate regression of log(volume_sold_kg) on log(price euro_kg)
@@ -76,66 +77,67 @@ linearHypothesis(model_1, c("log_price_euro_kg = -1"), white.adjust = "hc2")
 
 ```
 
+# Question (b)
 
-(b) Like in Lecture 8 (see the IV.R script), we will use wind_m_s as an instrument for
-log(price_euro_kg). To begin, estimate the first-stage regression relating log(price_euro_kg) to wind_m_s. Interpret the estimated coefficient on wind speed. Does it have the expected sign?
-Also test for the relevance of the instrument and whether it is a “weak” instrument by reporting the proper F-statistic.
+(b) Like in Lecture 8 (see the IV.R script), we will use wind_m_s as an instrument for log(price_euro_kg). To begin, estimate the first-stage regression relating log(price_euro_kg) to wind_m_s. Interpret the estimated coefficient on wind speed. Does it have the expected sign? Also test for the relevance of the instrument and whether it is a “weak” instrument by reporting the proper F-statistic.
 
-\noindent**The estimated coefficient on wind speed is 0.06735. It does have the expected sign (positive) because increased wind speeds would make making fishing more difficult, thus there should be a positive increase in the price per kg of sardines. For every additional meter per second increase in wind speed, there is a 0.06735 percent increase in the log price of sardines.**
+**The estimated coefficient on wind speed is 0.06735. This means that for every additional meter per second increase in wind speed, there is a 0.06735 percent increase in the log price of sardines. It does have the expected sign (positive) because increased wind speeds would make fishing effort more difficult, thus there should be a positive increase in the log price of sardines.**
 
-\noindent**The F-statistic is 144.65, which means the instruments are relevant and non-weak (Lecture 9, slide 14).** 
+**The F-statistic is 144.65, which means the wind_m_s instrument is relevant and non-weak (Lecture 9, slide 14).** 
 
 ```{r}
 # Regress log(price_euro_kg) on wind_m_s
 model_2 <- lm_robust(log_price_euro_kg ~ wind_m_s, data = EU_sardines_data)
 
+# Get summary table of the regression coefficients 
 summary(model_2)
 
-# F-test for non-weak and relevant instruments (Lecture 9, slides 13-14)
+# F-test for non-weak and relevant instruments 
 linearHypothesis(model_2, c("wind_m_s = 0"), white.adjust = "hc2")
 ```
 
+# Question (c)
 
 (c) Estimate the TSLS estimator of the price elasticity of demand for sardines using wind_m_s
 as an instrument for log(price_euro_kg). What is the estimated price elasticity of demand for
 sardines?
 
-\noindent**The two stage least squares TSLS of the price elasticity of demand for sardines using wind_m_s as an instrument for log(price_euro_kg) is -1.08802**
+**The two stage least squares (TSLS) regression of the price elasticity of demand for sardines using wind_m_s as an instrument for log(price_euro_kg) shows us that -1.08802 is the estimated price elasticity of demand for sardines.**
 
 ```{r}
-# TSLS - JUST-IDENTIFIED MODEL
-# Lecture 8, slide 13
-
-# Two stage least regression 
+# Two stage least squares regression 
 tsls1 <- ivreg(log_volume_sold_kg ~ log_price_euro_kg | wind_m_s, data = EU_sardines_data)
 
+# Summary of TSLS
 summary(tsls1)
 
 ```
 
+# Question (d)
 
 (d) Repeat the exercise in (c), but include fixed effects for each year, month, and country. [Hint:
 you can use the command “as.factor(country) + as.factor(year) +as.factor(month)” to the ivreg
 function in R]. Report the estimated price elasticity of demand and the F-statistic testing for relevant and non-weak instruments.
 
-\noindent**The estimated price elasticity of demand is -1.25004**
+**The estimated price elasticity of demand for sardines with fixed effects for each year, month, and country is -1.25004**
 
 ```{r}
-# TSLS - JUST-IDENTIFIED MODEL
-# Lecture 8, slide 13
-
-# Find the estimated price elasticity of demand
-# Completes two stage least regression 
+# Completes two stage least regression with fixed effects for each year, month, and country
 tsls2 <- ivreg(log_volume_sold_kg ~ log_price_euro_kg + 
                as.factor(country) + as.factor(year) + as.factor(month) | 
                wind_m_s + as.factor(country) + as.factor(year) + as.factor(month), 
                data = EU_sardines_data)
 
+# Get summary table of TSLS
 summary(tsls2)
 
 ```
 
-\noindent**The F-statistic is 77.658, which means the instruments are relevant and non-weak (Lecture 9, slide 14).**
+
+
+
+**The F-statistic is 77.658, which means the instruments are relevant and non-weak (Lecture 9, slide 14).**
+
 
 
 ```{r}
